@@ -149,7 +149,8 @@ Enter/Confirm, service and coin actions. An action resumes the original guest so
 its cabinet software can process the input. Use the game's own I/O test for
 steering and pedals; physical steering-wheel and force-feedback hardware are
 not validated by the keyboard mapping alone. The shared frontend owns SDL input;
-its core SDL/Evdev sources remain disabled in this configuration.
+its core SDL/Evdev sources remain disabled in this configuration. See
+[cabinet test controls](docs/CABINET_TEST.md).
 
 ## Gamepads
 
