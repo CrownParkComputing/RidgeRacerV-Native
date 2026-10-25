@@ -194,8 +194,9 @@ Overall: roughly **45% native host/arcade-HLE, 55% emulated core** today, with
 native: (1) fix the right-cabinet `ReadFIFO_VIF1` course-load crash and validate
 a synchronized race; (2) complete the FCAI option map (entry wait, laps, COMCAR,
 PCB ID); (3) native steering-wheel/force-feedback device backend; (4) static
-recompilation of the RRV3 ELF; (5) native IOP module replacements for ILSOCK
-and friends.
+recompilation of the RRV3 program — a working pipeline now exists, see
+[docs/RECOMP_SPIKE.md](docs/RECOMP_SPIKE.md); (5) native IOP module replacements
+for ILSOCK and friends.
 
 ## Checks and licensing
 
