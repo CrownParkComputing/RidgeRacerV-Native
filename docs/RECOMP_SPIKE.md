@@ -2,8 +2,10 @@
 
 Feasibility experiment run 2026-10-25: can the Ridge Racer V Arcade Battle binary be
 statically recompiled to host C++ (the "VM disappears" end state)? **Answer: the
-two highest-risk stages both produce working output.** This document records the
-exact pipeline so it can be repeated for Time Crisis 3/4.
+recompiled game executes.** It runs its real boot path natively — kernel setup,
+SIF DMA, and an IOP reboot requesting the arcade IOP image — with zero
+missing-code halts. This document records the exact pipeline and bring-up
+results so it can be repeated for Time Crisis 3/4.
 
 Status legend used below: **done** = verified with real output; **gap** = known
 missing piece; **risk** = unproven.
@@ -93,12 +95,47 @@ Generated code is semantically legible — e.g. the `0x90` program contains a
 `vu::div` on `vf13.w` (perspective divide, with the VU's 7-cycle pipeline delay
 modeled by a flag pipe), and qword loads of vertex data from VU memory.
 
+## Stage 5 — native runtime bring-up (done — the game boots)
+
+`ps2-web-recomp` ships a native host (`host/main.cpp` → `ps2run`) and a full
+runtime (memory, HLE kernel, SIF/DMA/VIF/GIF instrumentation, software GS). The
+wrapped ELF plus both generated trees build into one binary:
+
+```sh
+cmake -S ps2-web-recomp -B build -DPS2_GENERATED=<dir with unit_*.cpp + table.cpp + vu1_*.cpp>
+cmake --build build --target ps2run
+```
+
+The real entry point was recovered by tracing `ExecPS2` in the emulator —
+the boot chain is `proverb.elf (0x1d0001c) → 0x1000d8 → 0x900d8 → 0x200008`.
+With `entry = 0x200008` the recompiled game executes:
+
+```
+[sys] SetupThread / SetupHeap / FlushCache            (EE kernel init)
+[sys] DisableDmac / AddDmacHandler / EnableDmac       (DMA setup)
+[sys] SifSetDma / SifSetDChain / SifSetReg            (SIF handshake)
+[sif] IOP reboot requested with "rom0:UDNL mc0:ACIOPRP"
+[sys] CreateSema / WaitSema / iSignalSema             (real threading)
+```
+
+~59M guest cycles ran with **no missing-code halt** — every executed path was
+in the translated set. The run then entered a bulk clear loop over VA
+`0x40000000–0x42xxxxxx`, which are KUSEG uncached-accelerated aliases of main
+RAM: **the runtime does not model the EE TLB**. Two further gaps follow the same
+pattern: KSEG1 writes to `0x1DD02xxx` = arcade board registers (our ACDev9
+region — already HLE'd in the fork), and the `mc0:ACIOPRP` file request = the
+dongle-hosted IOP image (we have it: `NM00001.ps2`).
+
 ## What remains (gap/risk inventory)
 
 | Component | Status | Notes |
 | --- | --- | --- |
-| EE→C++ | done (analysis) | Runtime bring-up untested — EE kernel syscalls, DMA/VIF/GIF hardware answers |
-| VU1→C++ | done (translates+compiles) | Runtime binding (register/mem layout, XGKICK handoff to renderer) unproven |
+| EE→C++ | **executes** | Real boot path runs natively: kernel init, SIF DMA, semaphores, ~59M cycles clean |
+| VU1→C++ | done (translates+compiles) | Runtime binding (register/mem layout, XGKICK handoff to renderer) unproven — VU1 programs not yet invoked (game hasn't reached render init) |
+| EE kernel/syscalls | done | `ps2-web-recomp` HLE kernel answers SetupThread/Heap/SIF/semaphores correctly |
+| **EE TLB** | **gap — current blocker** | KUSEG `0x40000000+` uncached-accel aliases + KSEG1 `0xA0000000+` must map to physical RAM; runtime only maps canonical VAs |
+| Dongle/`mc0:` | gap | `mc0:ACIOPRP` file request must be served from the dongle image (`NM00001.ps2`); then IOP IRX loading/interpreting begins |
+| ACDev9/board regs | gap | `0x1DD02xxx` KSEG1 writes — arcade board hardware; our PCSX2-fork ACDev9 HLE is the reference implementation |
 | GS | gap | Needs a GS-packet→Vulkan runtime library; PCSX2's GS core or paraLLEl-GS are the candidates. No VIF/FIFO timing needed in recomp |
 | IOP/IRX | gap | ILSOCK/mempool etc. run on IOP (R3000); interpreter-per-module or HLE. Our native AN986/ILSOCK map already exists |
 | SPU2 | gap | Software mixer → host audio |
@@ -108,7 +145,8 @@ modeled by a flag pipe), and qword loads of vertex data from VU memory.
 
 ## Recommended next milestone
 
-Small runtime bring-up spike: link `rrv_gen` + `vu1/gen` against a minimal host
-(memory map + syscall stub table + VU dispatch) and push the game to its first
-JVS/ILSOCK call or first GS packet. That tests whether the *runtime* — not the
-translation — is where the real cost sits.
+Model the EE TLB aliasing (`0x40000000+` / `0xA0000000+` → RAM, `0x1xxxxxxx` →
+board regs) in the runtime memory map and re-run. Expected next observable
+checkpoint: the `mc0:ACIOPRP` load attempt — serve the module from the dongle
+image and the boot proceeds into the arcade IOP program, which is where JVS and
+ILSOCK come up.
