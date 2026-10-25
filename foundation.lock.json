@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/CrownParkComputing/TimeCrisis3-Native",
-  "commit": "f0e31be2fa3f5b5bc91b128c151e4f55c6ab427c",
+  "commit": "e73932bfb9685d160c001db8ef956469d4b8bcdc",
   "role": "Shared Linux/Vulkan/Nuklear in-process compatibility foundation",
   "executable": ".local/core-build/bin/tc3-native",
-  "status": "Ridge Racer V Arcade Battle; native FCAI service options and twin-cabinet launch implemented; linked race gameplay unvalidated (right-cabinet VIF1 course-load crash)"
+  "status": "Ridge Racer V Arcade Battle; native FCAI service options, twin-cabinet launch and SDL3 gamepad support implemented; linked race gameplay unvalidated (right-cabinet VIF1 course-load crash)"
 }

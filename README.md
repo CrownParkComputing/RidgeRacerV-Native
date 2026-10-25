@@ -151,6 +151,21 @@ steering and pedals; physical steering-wheel and force-feedback hardware are
 not validated by the keyboard mapping alone. The shared frontend owns SDL input;
 its core SDL/Evdev sources remain disabled in this configuration.
 
+## Gamepads
+
+SDL3 gamepads are detected and hot-plugged automatically (Xbox/PS/Switch and
+anything SDL maps); the connected pad name shows in the menu's Display tab.
+Pad input is translated onto the same `[JVS]`/`Keyboard/*` bindings as the
+keyboard — left stick steers (analog), the triggers are accelerator/brake
+(analog), D-pad navigates menus, Start/A = start/confirm, Back = coin,
+Guide = service credit, B = change view, X/Y and LB/RB = shift down/up.
+Bindings follow the `[JVS]` section of `PCSX2.ini`, so remapping the keyboard
+entry moves the pad input too. In a linked twin-cabinet pair the supervisor
+assigns pad 0 to the left screen and pad 1 to the right screen (set
+`TC3_PAD_INDEX` to override). Verified live against a uinput virtual pad:
+button and analog-axis events reach the game's FCA-1 inputs bound to real
+JVS bindings.
+
 ## Multiplayer and additional views
 
 **Linked Ridge racing is not validated yet.** `run_ridge.py --dual-screen`
