@@ -1,0 +1,26 @@
+.local/
+build*/
+__pycache__/
+*.pyc
+# User-supplied firmware, game media and mutable game storage stay private.
+*.squashfs
+*.chd
+*.iso
+*.ps2
+*.bin
+*.nvm
+*.mec
+*.elf
+*.p2s
+*.acgame
+*.zip
+*.7z
+*.tar*
+*.log
+*.core
+core
+core.*
+.env
+.env.*
+*.pem
+*.key
