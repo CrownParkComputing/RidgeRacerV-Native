@@ -91,3 +91,26 @@ configuration during the first paired run. No complete lap or race has yet been
 validated.
 
 ![Original GS snapshot from the successful solo Park Town comparison](docs/screenshots/ridge-solo-park-town.png)
+
+## Full-native recompilation spike
+
+The separate static-recompilation experiment
+([docs/RECOMP_SPIKE.md](docs/RECOMP_SPIKE.md)) now runs the decrypted game
+binary as host C++ — no EE/IOP virtual machine on the executed paths. Verified
+milestones: all 24 real ACIOPRP IRX modules load and start serially; the ATAPI
+DVD-ROM is emulated at the ACATA register level and streams the real disc into
+a 128 MB ACRAM cache with verify; the FCA-1 I/O frame and the V257 drive-board
+UART (`C01` status stream) satisfy the steering self-test; sound init runs and
+`kt_cd2arcram` completes. The recompiled binary renders the real **Ridge Racer
+V Arcade Battle title screen ("INSERT 2 COINS")** and enters its attract loop
+with BGM started.
+
+Update: the i.Link firmware chain (ILINK/ILSOCK/ILSAMPLE) is now replaced by
+a **native socket service** — HLE SIF servers for all twelve `sceILsock` RPCs
+plus real loopback-UDP transport — and two `ps2run` processes verifiably
+exchange real 288-byte game datagrams. ACSRAM is file-backed with valid
+checksums (FREE PLAY and cabinet role persist). Measured: under 0.2% of
+executed guest instructions run on the IOP interpreter — everything else is
+native. Remaining gaps: finishing linked-race negotiation, SPU2 host audio,
+VU1-program invocation, and native services for the rest of the IOP firmware
+(CDVD/FILEIO/MCMAN/ACIOPRP drivers).
